@@ -10,49 +10,131 @@ describe('Transaction controller', () => {
         response = new ResponseMock();
     })
 
-    test('given find transaction by user, when succes, then return transactions', (done) => {
+    describe('given find transaction by user', () => {
+
+        let controller;
+        let transaction;
+
+        const error = {code: 500};
         const transactions = [{uid: 1}, {uid: 2}];
 
-        const controller = new TransactionController({
-            findByUser: () => Promise.resolve(transactions)
-        });
-
-        controller.findByUser(request, response).then(() => {
-            expect(response._json).toEqual(transactions);
-            done();
+        beforeEach(() => {
+            transaction = new TransactionMock();
+            controller = new TransactionController(transaction);
         })
+
+        test('when succes, then return 200', (done) => {
+            transaction._response = Promise.resolve(transactions);
+    
+            controller.findByUser(request, response).then(() => {
+                expect(response._status).toEqual(200);
+                done();
+            })
+            
+        })
+
+        test('when succes, then return transactions', (done) => {
+            transaction._response = Promise.resolve(transactions);
+    
+            controller.findByUser(request, response).then(() => {
+                expect(response._json).toEqual(transactions);
+                done();
+            })
+            
+        })
+
+        describe('when fail', () => {
+    
+            test('then return error', (done) => {
+                transaction._response = Promise.reject(error);
         
-    })
+                controller.findByUser(request, response).then(() => {
+                    expect(response._json).toEqual(error);
+                    done();
+                })
+            })
+        
+            test('then return error status', (done) => {
+                transaction._response = Promise.reject(error);
+        
+                controller.findByUser(request, response).then(() => {
+                    expect(response._status).toEqual(500);
+                    done();
+                })
+            })
 
-    test('given find transactions by user, when fail, then return error', (done) => {
-        const error = {code: 500};
-
-        const controller = new TransactionController({
-            findByUser: () => Promise.reject(error)
-        });
-
-        controller.findByUser(request, response).then(() => {
-            expect(response._json).toEqual(error);
-            done();
         })
+
+        class TransactionMock {
+            _response;
+            findByUser() {
+                return this._response;
+            }
+        }
+
     })
 
-    test('given find transactions by user, when fail, then return error status 500', (done) => {
-        const error = {code: 500};
+    describe('given find transaction by uid', () => {
 
-        const controller = new TransactionController({
-            findByUser: () => Promise.reject(error)
-        });
+        test('given success, then return status 200', async () => {
+            const controller = new TransactionController({
+                findByUid: () => Promise.resolve()
+            });
 
-        controller.findByUser(request, response).then(() => {
+            const request = {params: {uid: 1}};
+            const response = new ResponseMock();
+
+            await controller.findByUid(request, response);
+
+            expect(response._status).toEqual(200);
+        })
+
+        test('given success, then return transaction', async () => {
+            const transaction = {
+                findByUid: () => Promise.resolve()
+            }
+
+            const controller = new TransactionController(transaction);
+
+            const request = {params: {uid: 1}};
+            const response = new ResponseMock();
+
+            await controller.findByUid(request, response);
+
+            expect(response._json).toEqual(transaction);
+        })
+
+        test('when fail, then return error status', async () => {
+            const controller = new TransactionController({
+                findByUid: () => Promise.reject({code: 500})
+            });
+
+            const request = {params: {uid: 1}};
+            const response = new ResponseMock();
+
+            await controller.findByUid(request, response);
+
             expect(response._status).toEqual(500);
-            done();
         })
+
+        test('when fail, then return error status', async () => {
+            const controller = new TransactionController({
+                findByUid: () => Promise.reject({code: 500})
+            });
+
+            const request = {params: {uid: 1}};
+            const response = new ResponseMock();
+
+            await controller.findByUid(request, response);
+
+            expect(response._json).toEqual({code: 500});
+        })
+
     })
 
     class ResponseMock {
-        _json = null;
-        _status = 0;
+        _json;
+        _status;
         json(value) {
             this._json = value;
         }
